@@ -1,4 +1,8 @@
-import electron from 'electron';
+import electron from 'electron'
+import { applyMiddleware, createStore, combineReducers } from "redux"
+import { forwardToRenderer, triggerAlias, replayActionMain } from 'electron-redux'
+
+
 // Module to control application life.
 const app = electron.app
 // Module to create native browser window.
@@ -59,3 +63,35 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+const exampleReducer = (state = { number: 0 }, action) => {
+    switch (action.type) {
+        case 'INC':
+            return { ...state, number: state.number + action.payload };
+        case 'DEC':
+            return { ...state, number: state.number - action.payload };
+    }
+    return state;
+};
+
+const reducers = combineReducers({
+    example: exampleReducer
+});
+
+const middleWare = store => next => action => {
+    console.log('Main middleWare' + action);
+    next(action);
+}
+
+const store = createStore(
+    reducers,
+    {
+        number: 0
+    },
+    applyMiddleware(
+        middleWare,
+        forwardToRenderer
+    )
+);
+
+replayActionMain(store);
